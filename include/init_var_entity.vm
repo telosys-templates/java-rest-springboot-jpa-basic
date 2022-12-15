@@ -1,0 +1,9 @@
+## #set($recordClass    = "${entity.name}Record" )
+## #set($recordInstance = $fn.uncapitalize($entity.name) )
+##
+#set($jpaEntityClass    = "${entity.name}" )
+#set($jpaEntityIdClass  = "${entity.name}Id" )
+##
+## #set($jpaMapperClass        = "${entity.name}RecordMapper" )
+## #set($jpaMapperInstance     = "${recordInstance}Mapper" )
+##

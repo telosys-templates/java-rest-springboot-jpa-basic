@@ -1,0 +1,77 @@
+#checkId($entity)
+#parse("include/init_var_entity.vm")
+#parse("include/java_header.vm")
+##--------------------------------------------------------------------------------------------------------
+package ${target.javaPackageFromFolder($SRC)};
+
+import java.io.Serializable;
+
+#foreach( $import in $java.imports($entity.keyAttributes) )
+import $import;
+#end
+
+/**
+ * Composite primary key for entity "${entity.name}" ( stored in table "${entity.databaseTable}" )
+ *
+ * @author Telosys
+ *
+ */
+## @Embeddable
+public class $jpaEntityIdClass implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    //--- ENTITY KEY ATTRIBUTES 
+#foreach( $field in $entity.keyAttributes )
+## $jpa.embeddedIdAnnotations(4, $field)
+    private $field.formattedType(10) $field.name ;
+    
+#end
+    /**
+     * Constructor
+     */
+    public $jpaEntityIdClass() {
+        super();
+    }
+
+    /**
+     * Constructor with values
+#foreach( $field in $entity.keyAttributes )
+     * @param $field.name 
+#end
+     */
+    public ${jpaEntityIdClass}( $fn.argumentsListWithWrapperType($entity.keyAttributes) ) {
+        super();
+#foreach( $field in $entity.keyAttributes )
+        this.$field.name = $field.name ;
+#end
+    }
+    
+    //--- GETTERS & SETTERS FOR KEY FIELDS
+#foreach( $field in $entity.keyAttributes )
+#if ( $field.databaseName ) 
+#end
+#if ( $field.setter )    public void ${field.setter}( $field.type value ) {
+        this.$field.name = value;
+    }
+#end
+#if ( $field.getter )    public $field.type ${field.getter}() {
+        return this.$field.name;
+    }
+#end
+
+#end  
+
+    //--- equals METHOD
+	@Override
+$java.equalsMethod($jpaEntityIdClass, $entity.keyAttributes )## no EOL
+
+    //--- hashCode METHOD
+	@Override
+$java.hashCodeMethod($jpaEntityIdClass, $entity.keyAttributes )## no EOL
+
+    //--- toString METHOD
+	@Override
+$java.toStringMethod($entity.keyAttributes, 4)## no EOL
+
+}
