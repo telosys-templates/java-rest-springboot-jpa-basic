@@ -3,6 +3,11 @@
 ##
 #set($jpaEntityClass    = "${entity.name}" )
 #set($jpaEntityIdClass  = "${entity.name}Id" )
+#if ( $entity.hasCompositePrimaryKey() )
+#set($jpaEntityIdClass  = "${entity.name}Id" )
+#else
+#set($jpaEntityIdClass  = $entity.keyAttribute.wrapperType )
+#end
 ##
 ## #set($jpaMapperClass        = "${entity.name}RecordMapper" )
 ## #set($jpaMapperInstance     = "${recordInstance}Mapper" )
