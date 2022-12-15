@@ -1,0 +1,39 @@
+# server:
+#   port: 8080
+
+#--- spring config
+spring:
+#   application:
+#     name: My basic application
+#   profiles:
+#     active: default
+#   main:
+#     banner-mode: off
+  datasource:
+    # Configure your datasource here :
+    # (example with Derby database)
+    driver-class-name: org.apache.derby.client.ClientAutoloadedDriver
+    # url: jdbc:derby://localhost:1527/basicappdb;create=true
+    url: jdbc:derby://localhost:1527/basicappdb
+    username: books
+    password: anything
+#  hikari:
+#    schema: XXXX # with Derby schema name = user name
+  jpa:
+    # Configure JPA-Hibernate here :
+    database-platform: org.hibernate.dialect.DerbyTenSevenDialect
+    hibernate:
+      ddl-auto: none  # none, update, create, create-drop, validate
+    show-sql: true
+    open-in-view: false # "Open Session In View" : true by default with Spring
+#   properties:
+#     hibernate.default_schema: XXXX
+#
+#--- logging config
+logging:
+  level:
+#      root: INFO
+    ${ROOT_PKG}: DEBUG
+#      ${ROOT_PKG}.persistence: DEBUG
+#      ${ROOT_PKG}.rest.controllers: DEBUG
+#      ${ROOT_PKG}.rest.services: DEBUG
