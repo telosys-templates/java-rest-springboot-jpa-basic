@@ -1,0 +1,189 @@
+## --------------------------------------------------
+#if ( $entity.isJoinEntity() )
+#cancel("No DTO class for join entity")
+#end
+## --------------------------------------------------
+#checkId($entity)
+#parse("include/init_var_entity.vm")
+#parse("include/java_header.vm")
+##---------------------------------------------------------------------------------------
+package ${target.javaPackageFromFolder(${SRC})};
+
+//import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import ${ROOT_PKG}.persistence.entities.${jpaEntityClass};
+import ${ROOT_PKG}.persistence.repositories.${repositoryClass};
+import ${ROOT_PKG}.rest.dto.${dtoClass};
+import ${ROOT_PKG}.rest.services.commons.GenericService;
+#if ( $entity.hasCompositePrimaryKey() )
+import ${ROOT_PKG}.persistence.entities.${jpaEntityIdClass};
+#else
+#foreach( $import in $java.imports($entity.keyAttributes) )
+import $import;
+#end
+#end
+
+/**
+ * REST service for entity "${entity.name}" <br>
+ * 
+ * This service provides all the necessary operations required by the REST controller<br>
+ * 
+ * @author 
+ *
+ */
+@Service
+public class ${serviceClass} extends GenericService<${jpaEntityClass}, ${dtoClass}> {
+
+	private static final Logger logger = LoggerFactory.getLogger(${serviceClass}.class);
+
+	private final ${repositoryClass} repository; // injected by constructor
+
+	/**
+	 * Constructor (usable for Dependency Injection)
+	 * 
+	 * @param repository the repository to be injected
+	 */
+	public ${serviceClass}(${repositoryClass} repository) {
+		super(${jpaEntityClass}.class, ${dtoClass}.class);
+		this.repository = repository;
+	}
+	
+	private $jpaEntityIdClass getEntityId(${dtoClass} dto) {
+#if ( $entity.hasCompositePrimaryKey() )
+		return new $jpaEntityIdClass($fn.argumentsListWithGetter("dto", $entity.keyAttributes));
+#else
+		return dto.${entity.keyAttribute.getter}();
+#end
+##		return dto.getUidagrPil();
+	}
+
+	/**
+	 * Finds all occurrences of the entity
+	 * @return
+	 */
+	public List<${dtoClass}> findAll() {
+		logger.debug("findAll()");
+		Iterable<${jpaEntityClass}> all = repository.findAll();
+		return entityListToDtoList(all);
+	}
+
+	/**
+	 * Finds the entity identified by the given PK
+	 * @param id
+	 * @return the entity or null if not found
+	 */
+	public ${dtoClass} findById(${jpaEntityIdClass} id) {
+		logger.debug("findById({})", id);
+		Optional<${jpaEntityClass}> optionalEntity = repository.findById(id);
+		return entityToDto(optionalEntity);
+	}
+
+	/**
+	 * Saves the given entity with the given PK (updated if exists else created)
+	 * @param id
+	 * @param dto 
+	 */
+	public void save(${jpaEntityIdClass} id, ${dtoClass} dto) {
+		logger.debug("save({},{})", id, dto);
+		// TODO (?) dto.setId(id); 
+		repository.save(dtoToEntity(dto));
+	}
+
+	/**
+	 * Updates the given entity if it exists
+	 * @param dto
+	 * @return true if updated, false if not found
+	 */
+	public boolean update(${dtoClass} dto) {
+		logger.debug("update({})", dto);
+		if (repository.existsById(getEntityId(dto))) {
+			repository.save(dtoToEntity(dto));
+			return true; // find and updated
+		} else {
+			return false; // not found (not updated)
+		}
+	}
+
+	/**
+	 * Updates partially the given entity if it exists
+	 * @param id
+	 * @param dto
+	 * @return true if updated, false if not found
+	 */
+	public boolean partialUpdate(${jpaEntityIdClass} id, ${dtoClass} dto) {
+		logger.debug("partialUpdate({}, {})", id, dto);
+		Optional<${jpaEntityClass}> optionalEntity = repository.findById(id);
+		if (optionalEntity.isPresent()) {
+			${jpaEntityClass} entity = optionalEntity.get();
+			// implement here the partial update
+			// entity.setXxx(dto.getXxx());
+			// etc ...
+			repository.save(entity);
+			return true; // find and updated
+		} else {
+			return false; // not found (not updated)
+		}
+	}
+
+	/**
+	 * Creates the given entity
+	 * @param dto
+	 * @return true if created, false if already exists
+	 */
+	public boolean create(${dtoClass} dto) {
+		logger.debug("create({})", dto);
+##		if (repository.existsById(dto.getId())) {
+		if (repository.existsById(getEntityId(dto))) {
+			return false; // already exists, not created
+		} else {
+			repository.save(dtoToEntity(dto));
+			return true; // created
+		}
+	}
+
+	/**
+	 * Deletes an entity by its PK
+	 * @param id
+	 * @return true if deleted, false if not found
+	 */
+	public boolean deleteById(${jpaEntityIdClass} id) {
+		logger.debug("deleteById({})", id);
+		if (repository.existsById(id)) {
+			repository.deleteById(id);
+			return true; // find and deleted
+		} else {
+			return false; // not found (not deleted)
+		}
+	}
+
+	// -----------------------------------------------------------------------------------------
+	// Specific "finders"
+	// -----------------------------------------------------------------------------------------
+/***
+	public List<${dtoClass}> findByTitle(String title) {
+		logger.debug("findByTitle({})", title);
+		// List<${jpaEntityClass}> list = repository.findByTitle(title);
+		List<${jpaEntityClass}> list = repository.findByTitleContaining(title);
+		return entityListToDtoList(list);
+	}
+
+	public List<${dtoClass}> findByPrice(BigDecimal price) {
+		logger.debug("findByPrice({})", price);
+		// List<${jpaEntityClass}> list = repository.findByTitle(title);
+		List<${jpaEntityClass}> list = repository.findByPrice(price);
+		return entityListToDtoList(list);
+	}
+
+	public List<${dtoClass}> findByTitleAndPrice(String title, BigDecimal price) {
+		logger.debug("findByTitleAndPrice({}, {})", title, price);
+		List<${jpaEntityClass}> list = repository.findByTitleContainingAndPrice(title, price);
+		return entityListToDtoList(list);
+	}
+***/
+}

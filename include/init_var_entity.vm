@@ -2,13 +2,15 @@
 ## #set($recordInstance = $fn.uncapitalize($entity.name) )
 ##
 #set($jpaEntityClass    = "${entity.name}" )
-#set($jpaEntityIdClass  = "${entity.name}Id" )
+## #set($jpaEntityIdClass  = "${entity.name}Id" )
 #if ( $entity.hasCompositePrimaryKey() )
 #set($jpaEntityIdClass  = "${entity.name}Id" )
 #else
 #set($jpaEntityIdClass  = $entity.keyAttribute.wrapperType )
 #end
 #set($dtoClass  = "${entity.name}DTO" )
+#set($repositoryClass = "${entity.name}Repository" )
+#set($serviceClass    = "${entity.name}Service" )
 ##
 ## #set($jpaMapperClass        = "${entity.name}RecordMapper" )
 ## #set($jpaMapperInstance     = "${recordInstance}Mapper" )
