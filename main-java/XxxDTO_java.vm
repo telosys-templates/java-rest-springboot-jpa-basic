@@ -1,0 +1,80 @@
+## --------------------------------------------------
+#if ( $entity.isJoinEntity() )
+#cancel("No DTO class for join entity")
+#end
+## --------------------------------------------------
+#checkId($entity)
+#parse("include/init_var_entity.vm")
+#parse("include/java_header.vm")
+##---------------------------------------------------------------------------------------
+package ${target.javaPackageFromFolder(${SRC})};
+
+import java.io.Serializable;
+#foreach( $import in $java.imports($entity) )
+import $import;
+#end
+
+/**
+ * DTO class for "${entity.name}"
+ *
+ * @author Telosys
+ *
+ */
+public class ${dtoClass} implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    //--- PRIMARY KEY 
+#foreach( $attribute in $entity.keyAttributes )
+    private $attribute.type $attribute.name #if($attribute.hasInitialValue())= ${attribute.initialValue} #end;
+#end
+    //--- OTHER DATA FIELDS 
+#foreach( $attribute in $entity.nonKeyAttributes )
+    private $attribute.type $attribute.name #if($attribute.hasInitialValue())= ${attribute.initialValue} #end;
+#end
+#if ( $entity.hasLinks() )	
+    //--- LINKS ( RELATIONSHIPS )
+#foreach( $link in $entity.links )
+    private ${link.fieldType}DTO $link.fieldName ; 
+#end
+#end
+
+    /**
+     * Constructor
+     */
+    public ${dtoClass}() {
+		super();
+    }
+    
+##    //--- GETTERS & SETTERS FOR FIELDS
+#foreach( $attribute in $entity.keyAttributes )
+    public void ${attribute.setter}( $attribute.type $attribute.name ) {
+        this.$attribute.name = $attribute.name ;
+    }
+    public $attribute.type ${attribute.getter}() {
+        return this.$attribute.name;
+    }
+
+#end
+#foreach( $attribute in $entity.nonKeyAttributes )
+    public void ${attribute.setter}( $attribute.type $attribute.name ) {
+        this.$attribute.name = $attribute.name ;
+    }
+    public $attribute.type ${attribute.getter}() {
+        return this.$attribute.name;
+    }
+
+#end
+##    //--- GETTERS FOR LINKS
+#foreach( $link in $entity.selectedLinks )
+    public ${link.fieldType}DTO ${link.getter}() {
+        return this.${link.fieldName};
+    } 
+
+#end
+##    //--- toString specific method
+	@Override
+## This function generates a 'toString' method with 4 blanks before each line
+$java.toStringMethod($fn.concatLists($entity.keyAttributes, $entity.nonKeyAttributes), 4)## no EOL
+
+}

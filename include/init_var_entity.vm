@@ -8,6 +8,7 @@
 #else
 #set($jpaEntityIdClass  = $entity.keyAttribute.wrapperType )
 #end
+#set($dtoClass  = "${entity.name}DTO" )
 ##
 ## #set($jpaMapperClass        = "${entity.name}RecordMapper" )
 ## #set($jpaMapperInstance     = "${recordInstance}Mapper" )
