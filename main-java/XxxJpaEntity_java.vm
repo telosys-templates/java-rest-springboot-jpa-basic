@@ -55,20 +55,20 @@ public class ${entity.name} implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    //--- ENTITY PRIMARY KEY 
+    //--- PRIMARY KEY 
 #foreach( $attribute in $entity.keyAttributes )
 $jpa.fieldAnnotations(4, $attribute)
     private $attribute.formattedType(10) $attribute.name #if($attribute.hasInitialValue())= ${attribute.initialValue} #end;
 
 #end
-    //--- ENTITY DATA FIELDS 
+    //--- OTHER DATA FIELDS 
 #foreach( $attribute in $entity.nonKeyAttributes )
 $jpa.fieldAnnotations(4, $attribute)
     private $attribute.formattedType(10) $attribute.name #if($attribute.hasInitialValue())= ${attribute.initialValue} #end;
 
 #end
-
-    //--- ENTITY LINKS ( RELATIONSHIP )
+#if ( $entity.hasLinks() )	
+    //--- LINKS ( RELATIONSHIPS )
 #foreach( $link in $entity.links )
 ## all annotations : Cardinality, JoinColumn(s), etc
 ##--- with "insertable=false, updatable=false" if attribute already mapped
@@ -83,7 +83,7 @@ $jpa.linkAnnotations(4, $link, $entity.attributes)
     private ${link.formattedFieldType(10)} $link.fieldName ; 
 
 #end
-
+#end
     /**
      * Constructor
      */
@@ -91,7 +91,7 @@ $jpa.linkAnnotations(4, $link, $entity.attributes)
 		super();
     }
     
-    //--- GETTERS & SETTERS FOR FIELDS
+##    //--- GETTERS & SETTERS FOR FIELDS
 #foreach( $attribute in $entity.keyAttributes )
     public void ${attribute.setter}( $attribute.type $attribute.name ) {
         this.$attribute.name = $attribute.name ;
@@ -110,14 +110,14 @@ $jpa.linkAnnotations(4, $link, $entity.attributes)
     }
 
 #end
-    //--- GETTERS FOR LINKS
+##    //--- GETTERS FOR LINKS
 #foreach( $link in $entity.selectedLinks )
     public ${link.formattedFieldType(0)} ${link.getter}() {
         return this.${link.formattedFieldName(0)};
     } 
 
 #end
-    //--- toString specific method
+##    //--- toString specific method
 	@Override
 ## This function generates a 'toString' method with 4 blanks before each line
 $java.toStringMethod($fn.concatLists($entity.keyAttributes, $entity.nonKeyAttributes), 4)## no EOL
