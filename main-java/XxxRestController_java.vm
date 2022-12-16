@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+## import org.springframework.web.bind.annotation.RequestParam; ## Only for "finders"
 import org.springframework.web.bind.annotation.RestController;
 
 import ${ROOT_PKG}.rest.dto.${dtoClass};
@@ -66,6 +66,7 @@ public class ${controllerClass} {
 	
 	/**
 	 * Constructor (usable for Dependency Injection)
+	 *
 	 * @param service
 	 */
 	protected ${controllerClass}(${serviceClass} service) {
@@ -75,6 +76,7 @@ public class ${controllerClass} {
     
 	/**
 	 * Get ALL
+	 *
 	 * @return
 	 */
 	@GetMapping("")
@@ -86,8 +88,9 @@ public class ${controllerClass} {
     
     /**
      * Get ONE identified by the given PK
-#foreach( $attribute in $entity.keyAttributes )   
-	 * @param $attribute.name 
+	 *
+#foreach( $attribute in $entity.keyAttributes )
+	 * @param $attribute.name
 #end
      * @return 200 or 404 
      */
@@ -103,18 +106,19 @@ public class ${controllerClass} {
 		}		
     }
 
-    // HEAD method is implicit 
-    // HEAD /xx      : 200 or 404  => same call as GET without id => findAll()    (without body in response)
-    // HEAD /xx/{id} : 200 or 404  => same call as GET with id    => findById(id) (without body in response)
+##    // HEAD method is implicit 
+##    // HEAD /xx      : 200 or 404  => same call as GET without id => findAll()    (without body in response)
+##    // HEAD /xx/{id} : 200 or 404  => same call as GET with id    => findById(id) (without body in response)
     
 	/**
  	 * Create if doesn't exist 
+	 *
 	 * @param ${dtoInstance}
 	 * @return 201 created or 409 conflict
 	 */
 	@PostMapping("")
 	protected ResponseEntity<Void> create(@RequestBody ${dtoClass} ${dtoInstance}) {
-    	logger.debug("REST : POST - create", ${dtoInstance});
+    	logger.debug("REST : POST - create");
 		if ( service.create(${dtoInstance}) ) {
 			return ResponseEntity.status(HttpStatus.CREATED).build(); // 201 created
 		}
@@ -125,7 +129,10 @@ public class ${controllerClass} {
 
 	/**
 	 * Update or create
-	 * @param id
+	 *
+#foreach( $attribute in $entity.keyAttributes )
+	 * @param $attribute.name
+#end
 	 * @param ${dtoInstance}
 	 * @return 200 updated or created
 	 */
@@ -138,6 +145,7 @@ public class ${controllerClass} {
 
 	/**
  	 * Update if exists 
+	 *
 	 * @param ${dtoInstance}
 	 * @return 200 updated or 404 not found
 	 */
@@ -154,7 +162,10 @@ public class ${controllerClass} {
 
 	/**
  	 * Partial update for the given PK (if it exists )
-	 * @param id
+	 *
+#foreach( $attribute in $entity.keyAttributes )
+	 * @param $attribute.name
+#end
 	 * @param ${dtoInstance}
 	 * @return 200 updated or 404 not found
 	 */
@@ -171,7 +182,10 @@ public class ${controllerClass} {
 
 	/**
 	 * Delete by PK 
-	 * @param id
+	 *
+#foreach( $attribute in $entity.keyAttributes )
+	 * @param $attribute.name
+#end
 	 * @return 204 deleted or 404 not found
 	 */
 	@DeleteMapping("${REST_PATH_FOR_ID}")
@@ -184,7 +198,7 @@ public class ${controllerClass} {
 			return ResponseEntity.notFound().build(); // 404 Not found = "not deleted"
 		}
 	}
-
+#*
 	//-----------------------------------------------------------------------------------------
 	// Specific "finders"
 	//-----------------------------------------------------------------------------------------
@@ -225,5 +239,5 @@ public class ${controllerClass} {
 //		List<${dtoClass}> list = service.findByXxxAndYyy(xxx, yyy);
 //		return ResponseEntity.ok(list); // always 200
 //	}
-    
+*#
 }
