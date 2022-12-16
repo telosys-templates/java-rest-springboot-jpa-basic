@@ -1,0 +1,229 @@
+## --------------------------------------------------
+#if ( $entity.isJoinEntity() )
+#cancel("No SERVICE class for join entity")
+#end
+## --------------------------------------------------
+#checkId($entity)
+#using("REST_API_ROOT")
+#parse("include/init_var_entity.vm")
+#parse("include/java_header.vm")
+##---------------------------------------------------------------------------------------
+package ${target.javaPackageFromFolder(${SRC})};
+
+#foreach( $import in $java.imports($entity.keyAttributes) )
+import $import;
+#end
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import ${ROOT_PKG}.rest.dto.${dtoClass};
+import ${ROOT_PKG}.rest.services.${serviceClass};
+
+##-------------------------------------------------
+## init variables
+##-------------------------------------------------
+## the collection name can be set with entity tag "CollectionName" (default value is entity name in lower case)
+#set( $collectionName = $entity.tagValue("CollectionName", $fn.toLowerCase($entity.name) ) )
+#set( $uriPath = "${REST_API_ROOT}/${collectionName}" )
+#set( $dtoInstance = "$fn.uncapitalize($entity.name)DTO" )
+#set( $ID_ARGS = $fn.argumentsList($entity.keyAttributes) )
+## REST key attributes 
+#set($keyAttribNames = [])
+#set($keyAttribWithPathParam = [])
+#foreach( $attribute in $entity.keyAttributes )
+#set( $_ = $keyAttribNames.add($attribute.name) )
+## #set( $v = "@PathParam(""${attribute.name}"") ${attribute.type} ${attribute.name}" )  
+## #set( $_ = $keyAttribWithPathParam.add($v) ) 
+#set( $_ = $keyAttribWithPathParam.add("@PathVariable ${attribute.type} ${attribute.name}") )
+#end
+## eg: "/{aa}/{bb}"
+#set($REST_PATH_FOR_ID  = "/" + $fn.joinWithPrefixSuffix(${keyAttribNames}, "/", "{", "}") )
+## eg: "@PathVariable long aa, @PathVariable String bb"
+#set($REST_PARAM_FOR_ID = $fn.join($keyAttribWithPathParam, ", ") )
+##-------------------------------------------------
+@RestController
+@RequestMapping(value = "${uriPath}", produces = MediaType.APPLICATION_JSON_VALUE)
+public class ${controllerClass} {
+
+	private static final Logger logger = LoggerFactory.getLogger(${controllerClass}.class);
+	
+	private ${serviceClass} service ; // injected
+	
+	/**
+	 * Constructor (usable for Dependency Injection)
+	 * @param service
+	 */
+	protected ${controllerClass}(${serviceClass} service) {
+		super();
+		this.service = service;
+	}
+    
+	/**
+	 * Get ALL
+	 * @return
+	 */
+	@GetMapping("")
+	protected ResponseEntity<List<${dtoClass}>> findAll() {
+    	logger.debug("REST : GET - findAll");
+    	List<${dtoClass}> list = service.findAll();
+    	return ResponseEntity.ok(list); // always 200
+    }
+    
+    /**
+     * Get ONE identified by the given PK
+#foreach( $attribute in $entity.keyAttributes )   
+	 * @param $attribute.name 
+#end
+     * @return 200 or 404 
+     */
+    @GetMapping("${REST_PATH_FOR_ID}")
+    protected ResponseEntity<${dtoClass}> findById($REST_PARAM_FOR_ID) {
+    	logger.debug("REST : GET - findById");
+    	${dtoClass} ${dtoInstance} = service.findById(${ID_ARGS});
+		if ( ${dtoInstance} != null ) {
+			return ResponseEntity.ok(${dtoInstance}); // 200 OK, found
+		}
+		else {
+			return ResponseEntity.notFound().build(); // 404 Not found
+		}		
+    }
+
+    // HEAD method is implicit 
+    // HEAD /xx      : 200 or 404  => same call as GET without id => findAll()    (without body in response)
+    // HEAD /xx/{id} : 200 or 404  => same call as GET with id    => findById(id) (without body in response)
+    
+	/**
+ 	 * Create if doesn't exist 
+	 * @param ${dtoInstance}
+	 * @return 201 created or 409 conflict
+	 */
+	@PostMapping("")
+	protected ResponseEntity<Void> create(@RequestBody ${dtoClass} ${dtoInstance}) {
+    	logger.debug("REST : POST - create", ${dtoInstance});
+		if ( service.create(${dtoInstance}) ) {
+			return ResponseEntity.status(HttpStatus.CREATED).build(); // 201 created
+		}
+		else {
+			return ResponseEntity.status(HttpStatus.CONFLICT).build(); // 409 Conflict
+		}
+	}
+
+	/**
+	 * Update or create
+	 * @param id
+	 * @param ${dtoInstance}
+	 * @return 200 updated or created
+	 */
+	@PutMapping("${REST_PATH_FOR_ID}")
+	protected ResponseEntity<Void> save($REST_PARAM_FOR_ID, @RequestBody ${dtoClass} ${dtoInstance}) {
+    	logger.debug("REST : PUT - save");
+		service.save(${ID_ARGS}, ${dtoInstance});
+		return ResponseEntity.ok().build(); // OK, updated or created
+	}
+
+	/**
+ 	 * Update if exists 
+	 * @param ${dtoInstance}
+	 * @return 200 updated or 404 not found
+	 */
+	@PutMapping("")
+	protected ResponseEntity<Void> update(@RequestBody ${dtoClass} ${dtoInstance}) {
+    	logger.debug("REST : PUT - update");
+		if ( service.update(${dtoInstance}) ) {
+			return ResponseEntity.ok().build(); // 200 OK, found and updated
+		}
+		else {
+			return ResponseEntity.notFound().build(); // 404 Not found = "not updated"
+		}
+	}
+
+	/**
+ 	 * Partial update for the given PK (if it exists )
+	 * @param id
+	 * @param ${dtoInstance}
+	 * @return 200 updated or 404 not found
+	 */
+	@PatchMapping("${REST_PATH_FOR_ID}")
+	protected ResponseEntity<Void> partialUpdate($REST_PARAM_FOR_ID, @RequestBody ${dtoClass} ${dtoInstance}) {
+    	logger.debug("REST : PATCH - partialUpdate");
+    	if ( service.partialUpdate(${ID_ARGS}, ${dtoInstance}) ) {
+    		return ResponseEntity.ok().build(); // OK, found and updated
+    	}
+    	else {
+			return ResponseEntity.notFound().build(); // 404 Not found = "not updated"
+    	}
+	}
+
+	/**
+	 * Delete by PK 
+	 * @param id
+	 * @return 204 deleted or 404 not found
+	 */
+	@DeleteMapping("${REST_PATH_FOR_ID}")
+	protected ResponseEntity<Void> deleteById($REST_PARAM_FOR_ID) {
+    	logger.debug("REST : DELETE - deleteById");
+		if ( service.deleteById(${ID_ARGS}) ) {
+			return ResponseEntity.noContent().build(); // 204 No content = "deleted"
+		}
+		else {
+			return ResponseEntity.notFound().build(); // 404 Not found = "not deleted"
+		}
+	}
+
+	//-----------------------------------------------------------------------------------------
+	// Specific "finders"
+	//-----------------------------------------------------------------------------------------
+
+//	/**
+//	 * Find by xxx
+//	 * @param xxx
+//	 * @return
+//	 */
+//	@GetMapping(value = "", params = "xxx")
+//	protected ResponseEntity<List<${dtoClass}>> findByXxx(@RequestParam("xxx")  String xxx) {
+//		logger.debug("findByXxx({})", xxx);
+//		List<${dtoClass}> list = service.findByXxx(xxx);
+//		return ResponseEntity.ok(list); // always 200
+//	}
+    
+//	/**
+//	 * Find by yyy
+//	 * @param yyy
+//	 * @return
+//	 */
+//	@GetMapping(value = "", params = "yyy")
+//	protected ResponseEntity<List<${dtoClass}>> findByYyy(@RequestParam("yyy")  BigDecimal yyy) {
+//		logger.debug("findByYyy({})", yyy);
+//		List<${dtoClass}> list = service.findByYyy(yyy);
+//		return ResponseEntity.ok(list); // always 200
+//	}
+    
+//	/**
+//	 * Find by xxx and yyy
+//	 * @param xxx
+//	 * @param yyy
+//	 * @return
+//	 */
+//	@GetMapping(value = "", params={"xxx","yyy"} ) // params : for request mapping (avoid ambiguous mapping)
+//	protected ResponseEntity<List<${dtoClass}>> findByXxxAndYyy(@RequestParam("xxx") String xxx, @RequestParam("yyy") BigDecimal yyy) {
+//		logger.debug("findByXxxAndYyy({},{})", xxx, yyy);
+//		List<${dtoClass}> list = service.findByXxxAndYyy(xxx, yyy);
+//		return ResponseEntity.ok(list); // always 200
+//	}
+    
+}
