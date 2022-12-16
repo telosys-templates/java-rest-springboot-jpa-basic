@@ -1,6 +1,6 @@
 ## --------------------------------------------------
 #if ( $entity.isJoinEntity() )
-#cancel("No DTO class for join entity")
+#cancel("No SERVICE class for join entity")
 #end
 ## --------------------------------------------------
 #checkId($entity)
@@ -9,9 +9,12 @@
 ##---------------------------------------------------------------------------------------
 package ${target.javaPackageFromFolder(${SRC})};
 
-//import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+
+#foreach( $import in $java.imports($entity.keyAttributes) )
+import $import;
+#end
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,18 +26,14 @@ import ${ROOT_PKG}.rest.dto.${dtoClass};
 import ${ROOT_PKG}.rest.services.commons.GenericService;
 #if ( $entity.hasCompositePrimaryKey() )
 import ${ROOT_PKG}.persistence.entities.${jpaEntityIdClass};
-#else
-#foreach( $import in $java.imports($entity.keyAttributes) )
-import $import;
-#end
 #end
 
 /**
  * REST service for entity "${entity.name}" <br>
  * 
- * This service provides all the necessary operations required by the REST controller<br>
+ * This service provides all the necessary operations required by the REST controller <br>
  * 
- * @author 
+ * @author Telosys
  *
  */
 @Service
@@ -54,17 +53,23 @@ public class ${serviceClass} extends GenericService<${jpaEntityClass}, ${dtoClas
 		this.repository = repository;
 	}
 	
+	/**
+	 * Returns the entity ID object from the given DTO
+	 *
+	 * @param dto
+	 * @return
+	 */
 	private $jpaEntityIdClass getEntityId(${dtoClass} dto) {
 #if ( $entity.hasCompositePrimaryKey() )
 		return new $jpaEntityIdClass($fn.argumentsListWithGetter("dto", $entity.keyAttributes));
 #else
 		return dto.${entity.keyAttribute.getter}();
 #end
-##		return dto.getUidagrPil();
 	}
 
 	/**
 	 * Finds all occurrences of the entity
+	 *
 	 * @return
 	 */
 	public List<${dtoClass}> findAll() {
@@ -73,30 +78,48 @@ public class ${serviceClass} extends GenericService<${jpaEntityClass}, ${dtoClas
 		return entityListToDtoList(all);
 	}
 
+#if ( $entity.hasCompositePrimaryKey() )
+#set( $entityIdInit = "new $jpaEntityIdClass($fn.argumentsList($entity.keyAttributes))" )
+#else
+#set( $entityIdInit = "${entity.keyAttribute.name}" )
+#end
 	/**
 	 * Finds the entity identified by the given PK
-	 * @param id
+	 *
+#foreach( $attribute in $entity.keyAttributes )   
+	 * @param $attribute.name 
+#end
 	 * @return the entity or null if not found
 	 */
-	public ${dtoClass} findById(${jpaEntityIdClass} id) {
-		logger.debug("findById({})", id);
-		Optional<${jpaEntityClass}> optionalEntity = repository.findById(id);
+	public ${dtoClass} findById($fn.argumentsListWithType($entity.keyAttributes)) {
+		${jpaEntityIdClass} entityId = ${entityIdInit};
+		logger.debug("findById({})", entityId);
+		Optional<${jpaEntityClass}> optionalEntity = repository.findById(entityId);
 		return entityToDto(optionalEntity);
 	}
 
 	/**
-	 * Saves the given entity with the given PK (updated if exists else created)
-	 * @param id
+	 * Saves the given entity with the given PK <br>
+	 * "UPSERT" operation (updated if it exists or created if it does not exist)
+	 *
+#foreach( $attribute in $entity.keyAttributes )
+	 * @param $attribute.name 
+#end
 	 * @param dto 
 	 */
-	public void save(${jpaEntityIdClass} id, ${dtoClass} dto) {
-		logger.debug("save({},{})", id, dto);
-		// TODO (?) dto.setId(id); 
+	public void save($fn.argumentsListWithType($entity.keyAttributes), ${dtoClass} dto) {
+		${jpaEntityIdClass} entityId = ${entityIdInit};
+		logger.debug("save({},{})", entityId, dto);
+		// force PK in DTO (just to be sure to conform with the given PK) 
+#foreach( $attribute in $entity.keyAttributes )
+		dto.${attribute.setter}(${attribute.name});
+#end
 		repository.save(dtoToEntity(dto));
 	}
 
 	/**
 	 * Updates the given entity if it exists
+	 *
 	 * @param dto
 	 * @return true if updated, false if not found
 	 */
@@ -112,13 +135,17 @@ public class ${serviceClass} extends GenericService<${jpaEntityClass}, ${dtoClas
 
 	/**
 	 * Updates partially the given entity if it exists
-	 * @param id
+	 *
+#foreach( $attribute in $entity.keyAttributes )   
+	 * @param $attribute.name 
+#end
 	 * @param dto
 	 * @return true if updated, false if not found
 	 */
-	public boolean partialUpdate(${jpaEntityIdClass} id, ${dtoClass} dto) {
-		logger.debug("partialUpdate({}, {})", id, dto);
-		Optional<${jpaEntityClass}> optionalEntity = repository.findById(id);
+	public boolean partialUpdate($fn.argumentsListWithType($entity.keyAttributes), ${dtoClass} dto) {
+		${jpaEntityIdClass} entityId = ${entityIdInit};
+		logger.debug("partialUpdate({}, {})", entityId, dto);
+		Optional<${jpaEntityClass}> optionalEntity = repository.findById(entityId);
 		if (optionalEntity.isPresent()) {
 			${jpaEntityClass} entity = optionalEntity.get();
 			// implement here the partial update
@@ -133,12 +160,12 @@ public class ${serviceClass} extends GenericService<${jpaEntityClass}, ${dtoClas
 
 	/**
 	 * Creates the given entity
+	 *
 	 * @param dto
 	 * @return true if created, false if already exists
 	 */
 	public boolean create(${dtoClass} dto) {
 		logger.debug("create({})", dto);
-##		if (repository.existsById(dto.getId())) {
 		if (repository.existsById(getEntityId(dto))) {
 			return false; // already exists, not created
 		} else {
@@ -149,13 +176,17 @@ public class ${serviceClass} extends GenericService<${jpaEntityClass}, ${dtoClas
 
 	/**
 	 * Deletes an entity by its PK
-	 * @param id
+	 *
+#foreach( $attribute in $entity.keyAttributes )   
+	 * @param $attribute.name 
+#end
 	 * @return true if deleted, false if not found
 	 */
-	public boolean deleteById(${jpaEntityIdClass} id) {
-		logger.debug("deleteById({})", id);
-		if (repository.existsById(id)) {
-			repository.deleteById(id);
+	public boolean deleteById($fn.argumentsListWithType($entity.keyAttributes)) {
+		${jpaEntityIdClass} entityId = ${entityIdInit};
+		logger.debug("deleteById({})", entityId);
+		if (repository.existsById(entityId)) {
+			repository.deleteById(entityId);
 			return true; // find and deleted
 		} else {
 			return false; // not found (not deleted)
