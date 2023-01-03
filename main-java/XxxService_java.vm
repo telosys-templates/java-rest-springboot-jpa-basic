@@ -166,12 +166,18 @@ public class ${serviceClass} extends GenericService<${jpaEntityClass}, ${dtoClas
 	 */
 	public boolean create(${dtoClass} dto) {
 		logger.debug("create({})", dto);
+#if ($entity.hasAutoIncrementedKey() )
+		// auto-generated Primary Key
+		repository.save(dtoToEntity(dto));
+		return true; // always created
+#else	
 		if (repository.existsById(getEntityId(dto))) {
 			return false; // already exists, not created
 		} else {
 			repository.save(dtoToEntity(dto));
 			return true; // created
 		}
+#end
 	}
 
 	/**
