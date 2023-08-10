@@ -65,16 +65,13 @@ public class ${dtoClass} implements Serializable {
     }
 
 #end
-##    //--- GETTERS FOR LINKS
 #foreach( $link in $entity.selectedLinks )
     public ${link.fieldType}DTO ${link.getter}() {
         return this.${link.fieldName};
     } 
 
 #end
-##    //--- toString specific method
 	@Override
-## This function generates a 'toString' method with 4 blanks before each line
-$java.toStringMethod($fn.concatLists($entity.keyAttributes, $entity.nonKeyAttributes), 4)## no EOL
-
+## This function generates a 'toString' method with indentation level = 1 (1 tab)
+$java.toStringMethod($entity, 1)
 }
