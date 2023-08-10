@@ -62,16 +62,14 @@ public class $jpaEntityIdClass implements Serializable {
 
 #end  
 
-    //--- equals METHOD
 	@Override
 $java.equalsMethod($jpaEntityIdClass, $entity.keyAttributes )## no EOL
 
-    //--- hashCode METHOD
 	@Override
 $java.hashCodeMethod($jpaEntityIdClass, $entity.keyAttributes )## no EOL
 
-    //--- toString METHOD
 	@Override
-$java.toStringMethod($entity.keyAttributes, 4)## no EOL
+## This function generates a 'toString' method with indentation level = 1 (1 tab)
+$java.toStringMethod($entity, 1)
 
 }
