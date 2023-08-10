@@ -91,7 +91,6 @@ $jpa.linkAnnotations(4, $link, $entity.attributes)
 		super();
     }
     
-##    //--- GETTERS & SETTERS FOR FIELDS
 #foreach( $attribute in $entity.keyAttributes )
     public void ${attribute.setter}( $attribute.type $attribute.name ) {
         this.$attribute.name = $attribute.name ;
@@ -110,16 +109,14 @@ $jpa.linkAnnotations(4, $link, $entity.attributes)
     }
 
 #end
-##    //--- GETTERS FOR LINKS
 #foreach( $link in $entity.selectedLinks )
     public ${link.formattedFieldType(0)} ${link.getter}() {
         return this.${link.formattedFieldName(0)};
     } 
 
 #end
-##    //--- toString specific method
 	@Override
-## This function generates a 'toString' method with 4 blanks before each line
-$java.toStringMethod($fn.concatLists($entity.keyAttributes, $entity.nonKeyAttributes), 4)## no EOL
+## This function generates a 'toString' method with indentation level = 1 (1 tab)
+$java.toStringMethod($entity, 1)
 
 }
