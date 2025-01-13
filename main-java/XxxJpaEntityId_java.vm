@@ -70,6 +70,6 @@ $java.hashCodeMethod($jpaEntityIdClass, $entity.keyAttributes )## no EOL
 
 	@Override
 ## This function generates a 'toString' method with indentation level = 1 (1 tab)
-$java.toStringMethod($entity, 1)
+$java.toStringMethod($entity, $entity.keyAttributes, 1)
 
 }
