@@ -7,6 +7,9 @@
 #parse("include/init_var_entity.vm")
 #parse("include/java_header.vm")
 ##---------------------------------------------------------------------------------------
+#macro( dtoType $link )
+$link.fieldType.replace($link.targetEntitySimpleType, "${link.targetEntitySimpleType}DTO")#end
+##---------------------------------------------------------------------------------------
 package ${target.javaPackageFromFolder(${SRC})};
 
 import java.io.Serializable;
@@ -35,7 +38,7 @@ public class ${dtoClass} implements Serializable {
 #if ( $entity.hasLinks() )	
     //--- LINKS ( RELATIONSHIPS )
 #foreach( $link in $entity.links )
-    private ${link.fieldType}DTO $link.fieldName ; 
+    private #dtoType($link) $link.fieldName ; 
 #end
 #end
 
@@ -66,7 +69,7 @@ public class ${dtoClass} implements Serializable {
 
 #end
 #foreach( $link in $entity.selectedLinks )
-    public ${link.fieldType}DTO ${link.getter}() {
+    public #dtoType($link) ${link.getter}() {
         return this.${link.fieldName};
     } 
 
